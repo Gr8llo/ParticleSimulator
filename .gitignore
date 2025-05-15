@@ -1,32 +1,41 @@
-# Prerequisites
-*.d
+# ==== CLion / JetBrains ====
+.idea/
+*.iml
 
-# Compiled Object files
-*.slo
-*.lo
+# ==== CMake build directories ====
+cmake-build-*/
+build/
+out/
+
+# ==== CMake generated files ====
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# ==== OS-specific ====
+.DS_Store  # macOS
+Thumbs.db  # Windows
+
+# ==== Executable / Object files ====
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
 *.exe
 *.out
-*.app
+*.a
+*.so
+*.dll
+
+# ==== Logs / temp ====
+*.log
+*.tmp
+
+# ==== Backup / swap files ====
+*~
+*.swp
+*.swo
+
+# ==== CLion run/debug configuration ====
+cmake-build-debug/
+cmake-build-release/

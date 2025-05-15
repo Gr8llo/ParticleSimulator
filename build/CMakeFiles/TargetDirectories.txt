@@ -1,3 +1,0 @@
-/home/gr8llo/Documents/Particles/build/CMakeFiles/Particles.dir
-/home/gr8llo/Documents/Particles/build/CMakeFiles/edit_cache.dir
-/home/gr8llo/Documents/Particles/build/CMakeFiles/rebuild_cache.dir
