@@ -11,7 +11,7 @@ private:
     glm::vec2 velocity;
     // float radius;  //aggiunti tra le costanti
     // float mass;
-    int id;
+    unsigned short int id;
 
 public:
     Particle(int id, glm::vec2 pos, glm::vec2 vel);

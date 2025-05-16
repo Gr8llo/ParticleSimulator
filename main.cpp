@@ -9,14 +9,14 @@
 #include "Constants.h"
 #include "Particle.h"
 
-float random(float lim) {
+float random(const float lim) {
     static std::random_device r;
     static std::default_random_engine engine(r());
     std::uniform_real_distribution<float> dist(0, lim);
     return dist(engine);
 }
 
-float randomV(float lim) {
+float randomV(const float lim) {
     static std::random_device r;
     static std::default_random_engine engine(r());
     std::uniform_real_distribution<float> dist(lim * -1, lim);
@@ -38,6 +38,7 @@ void singleThreadParticleComputation(std::atomic<bool> check[], std::vector<Part
                 check[j].store(true, std::memory_order_relaxed);
             }
         }
+
     }
 }
 
@@ -63,11 +64,13 @@ int main(const int argc, char *argv[]) {
             glm::vec2(randomV(constants::MAX_PARTICLES_VELOCITY), randomV(constants::MAX_PARTICLES_VELOCITY)));
         particles.push_back(p);
     }//Generating casual position and velocity for each particle
-    std::vector<SDL_Point> ptsCollided(N);
-    std::vector<SDL_Point> ptsNotCollided(N);
+    std::vector<SDL_Point> ptsCollided;
+    ptsCollided.reserve(N);
+    std::vector<SDL_Point> ptsNotCollided;
+    ptsNotCollided.reserve(N);
     std::atomic<bool> check[N];
 
-    const short unsigned int numThreads = std::thread::hardware_concurrency();
+    const unsigned short int numThreads = std::thread::hardware_concurrency();
     const short unsigned int chunk = N/numThreads;
     std::vector<std::thread> threads;
     threads.reserve(numThreads);
@@ -77,9 +80,9 @@ int main(const int argc, char *argv[]) {
     unsigned int fpsTime = lastTime;
     unsigned int frameCount = 0;
     float timeMultiplier = 1.f;
-    int skipCount = 0;
-    int skipValue = 0;
-    int renderCount = 0;
+    short int skipCount = 0;
+    short int skipValue = 0;
+    short int renderCount = 0;
 
     while (running) {
         SDL_Event event;
@@ -93,17 +96,17 @@ int main(const int argc, char *argv[]) {
             if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE) timeMultiplier = 1;
         }
 
-        unsigned int currentTime = SDL_GetTicks();
+        const unsigned int currentTime = SDL_GetTicks();
         float dt = static_cast<float>(currentTime - lastTime) / 1000.0f;
         dt *= timeMultiplier;
         lastTime = currentTime;
 
         frameCount++;
         if (currentTime - fpsTime >= 500) {
-            float fps = static_cast<float>(frameCount) / static_cast<float>(currentTime - fpsTime)*1000;
-            float fpsRender = static_cast<float>(renderCount) / static_cast<float>(currentTime - fpsTime)*1000;
+            const float fps = static_cast<float>(frameCount) / static_cast<float>(currentTime - fpsTime)*1000;
+            const float fpsRender = static_cast<float>(renderCount) / static_cast<float>(currentTime - fpsTime)*1000;
             std::cout << "FPS: " << fps << "\t" << "RENDER: " << fpsRender << std::endl;
-            skipValue = (static_cast<int>(fps) / constants::TARGET_FPS) - 1;
+            skipValue = static_cast<short>(static_cast<int>(fps / constants::TARGET_FPS) - 1);
             skipCount = skipValue;
             //l'idea e calcolare più fps possibili, ma renderizzarne soltanto un target(es: 60), quindi ad esempio se faccio 120 fps avrò 120/60 -1 = 1 quindi dovrò skipapre un fps
             frameCount = 0;
@@ -127,7 +130,7 @@ int main(const int argc, char *argv[]) {
                 check[i].store(false, std::memory_order_relaxed);
             }
         } //Vector initialization
-        std::sort(particles.begin(), particles.end(), [](const Particle &a, const Particle &b) {
+        std::ranges::sort(particles, [](const Particle &a, const Particle &b) {
                 return a.getPosition().x < b.getPosition().x;
             });
 
@@ -184,7 +187,7 @@ int main(const int argc, char *argv[]) {
             renderCount++;
             skipCount = skipValue; //ripristina skipCount dopo aver renderizzatoil frame
         } //Render
-        }
+    }
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
