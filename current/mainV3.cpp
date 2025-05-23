@@ -79,43 +79,32 @@ int main(const int argc, char *argv[]) {
     vector<SDL_Point> ptsNotCollided(N);
     atomic<bool> check[N];
 
-    bool running = true;
-    unsigned int lastTime = SDL_GetTicks();
-    unsigned int fpsTime = lastTime;
-    unsigned short int frameCount = 0;
-    unsigned short int renderCount = 0;
-    float timeMultiplier = 1.f;
-    short int skipCount = 0;
-    short int skipValue = 0;
-    float zoom = 1.0f;
+    AppState appState;
 
-    while (running) {
+    while (appState.running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) running = false;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT) timeMultiplier = 0.2f;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_LEFT) timeMultiplier = 1.f;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT) timeMultiplier = 5.f;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_RIGHT) timeMultiplier = 1;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE) timeMultiplier = 0;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE) timeMultiplier = 1;
+            if (event.type == SDL_QUIT) appState.running = false;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT) appState.timeMultiplier = 0.2f;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_LEFT) appState.timeMultiplier = 1.f;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT) appState.timeMultiplier = 5.f;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_RIGHT) appState.timeMultiplier = 1;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE) appState.timeMultiplier = 0;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE) appState.timeMultiplier = 1;
             if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == SDLK_PLUS) { // '+'
-                    zoom = min(zoom + 0.1f, 10.0f);
-                } else if (event.key.keysym.sym == SDLK_MINUS) { // '-'
-                    zoom = max(zoom - 0.1f, 1.f);
-                }
+                if (event.key.keysym.sym == SDLK_PLUS) appState.zoom = min(appState.zoom + 0.1f, 10.0f);
+                else if (event.key.keysym.sym == SDLK_MINUS) appState.zoom = max(appState.zoom - 0.1f, 1.f);
             }
         }
 
         const unsigned int currentTime = SDL_GetTicks();
-        float dt = static_cast<float>(currentTime - lastTime) / 1000.0f;
-        dt *= timeMultiplier;
-        lastTime = currentTime;
+        float dt = static_cast<float>(currentTime - appState.lastTime) / 1000.0f;
+        dt *= appState.timeMultiplier;
+        appState.lastTime = currentTime;
 
-        frameCount++;
-        if (currentTime - fpsTime >= 500) computeFps(frameCount, renderCount, currentTime, fpsTime, skipValue, skipCount); //Fps and frameSkipping computation
-        resizeWindow(window, renderer, zoom);
+        appState.frameCount++;
+        if (currentTime - appState.fpsTime >= 500) computeFps(appState.frameCount, appState.renderCount, currentTime, appState.fpsTime, appState.skipValue, appState.skipCount); //Fps and frameSkipping computation
+        resizeWindow(window, renderer, appState.zoom);
 
         ptsCollided.clear();
         ptsNotCollided.clear();
@@ -144,11 +133,11 @@ int main(const int argc, char *argv[]) {
             }
         } //Assign values to ptsCollide and ptsNotCollided
 
-        if (skipCount > 0) skipCount--; //Frame skipping
+        if (appState.skipCount > 0) appState.skipCount--; //Frame skipping
         else{
             renderParticles(renderer, ptsCollided, ptsNotCollided);
-            renderCount++;
-            skipCount = skipValue; //ripristina skipCount dopo aver renderizzato il frame
+            appState.renderCount++;
+            appState.skipCount = appState.skipValue; //ripristina skipCount dopo aver renderizzato il frame
         }
     }
     SDL_DestroyRenderer(renderer);
