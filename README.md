@@ -15,7 +15,7 @@
 1. `cmake -DCMAKE_BUILD_TYPE=Release .`  
    ➤ Molto importante, migliora notevolmente le prestazioni.
 2. Disegno separato delle particelle verdi e rosse  
-   ➤ Poco impatto, migliora leggermente gli fps evitando cambi colore frequenti.
+   ➤ Poco impattante, migliora leggermente gli fps evitando cambi colore frequenti.
 3. Uso di `SDL_RenderDrawPoints` per disegnare tutti i punti in un’unica chiamata  
    ➤ Significativo aumento di prestazioni rispetto al disegno singolo.
 4. Programmazione **multithread**  
@@ -25,6 +25,7 @@
    ➤ A FPS bassi la simulazione risulta più realistica.
 6. Funzione di gestione collisioni ottimizzata  
    ➤ Riduce il tempo di calcolo delle interazioni.
+7. tramite `ulimit -s` aumento la dimensione massima dello stack (`ulimit -a` per vedere i limiti correnti), questo funziona solo per la shell corrente
 
 ---
 
@@ -47,11 +48,6 @@
     - Freccia sinistra = rallenta
       ➤ Il `dt` (delta time) viene modificato dinamicamente.
 3. **Pausa** con la **barra spaziatrice**.
+4. **Zoom** con + e -
 
 ---
-
-## 🧪 TESTS FINALI
-
-- **100.000 particelle**: ~90 FPS
-- Aumentando lo **spazio simulato**, si potrebbe aumentare significativamente il numero di particelle.
-- Il problema principale rimane il numero eccessivo di **collisioni** da gestire.

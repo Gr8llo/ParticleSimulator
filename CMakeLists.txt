@@ -23,9 +23,9 @@ find_package(glm REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
 add_executable(Particles
-        mainV2.cpp
+        mainV3.cpp
         Constants.h
-        Particle.cpp
+        ParticleV2.cpp
 )
 
 # Link SDL2

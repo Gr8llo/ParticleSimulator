@@ -30,8 +30,6 @@ void Particle::checkWallCollision() {
 bool Particle::resolveCollision(Particle &other) {
     const glm::vec2 delta = position - other.position;
     const float distSquared = dot(delta, delta);
-    // constexpr float minDist = 2*constants::PARTICLE_RADIUS;
-    // constexpr float minDistSquared = minDist * minDist; //aggiunte alle costanti
 
     if (distSquared > constants::MIN_PARTICLE_DIST_SQUARED || distSquared < 0.0f) return false;
 
@@ -43,7 +41,6 @@ bool Particle::resolveCollision(Particle &other) {
     if (velAlongNormal > 0.f) return false; // si stanno allontanando
 
     constexpr float restitution = 1.0f;
-    // const float impulseMag = -(1 + restitution) * velAlongNormal / (2/constants::INVERSE_PARTICLE_MASS); //originale
     const float impulseMag = -(1 + restitution) * velAlongNormal / (constants::PARTICLE_MASS * 2); //ottimizzata
 
     const glm::vec2 impulse = impulseMag * normal;

@@ -9,40 +9,53 @@
 #include "Constants.h"
 #include "Particle.h"
 
-float random(const float lim) {
+inline float random(const float min, const float max) {
     static std::random_device r;
     static std::default_random_engine engine(r());
-    std::uniform_real_distribution<float> dist(0, lim);
+    std::uniform_real_distribution<float> dist(min, max);
     return dist(engine);
 }
-
-float randomV(const float lim) {
-    static std::random_device r;
-    static std::default_random_engine engine(r());
-    std::uniform_real_distribution<float> dist(lim * -1, lim);
-    return dist(engine);
+inline void initializeRandomParticles(std::vector<Particle> &particles, const unsigned int N) {
+    constexpr float maxVelocity = constants::MAX_PARTICLES_VELOCITY;
+    constexpr float maxHeightLimit = constants::SCREEN_HEIGHT/2.f + constants::CONTAINER_INITIAL_HEIGHT/2.f;
+    constexpr float minHeightLimit = maxHeightLimit - constants::CONTAINER_INITIAL_HEIGHT;
+    constexpr float maxWidthLimit = constants::SCREEN_WIDTH/2.f + constants::CONTAINER_INITIAL_WIDTH/2.f;
+    constexpr float minWidthLimit = maxWidthLimit - constants::CONTAINER_INITIAL_WIDTH;
+    for (int i = 0; i < N; i++) { //non si può usare particle.size() perchè ho usato reserve
+        Particle p(
+            i, glm::vec2(random(minWidthLimit, maxWidthLimit), random(minHeightLimit, maxHeightLimit)),
+            glm::vec2(random(-maxVelocity, maxVelocity), random(-maxVelocity, maxVelocity)));
+        particles.push_back(p);
+    } //Generating casual position and velocity for each particle
 }
 
-void singleThreadParticleComputation(std::atomic<bool> check[], std::vector<Particle> &particles, const int lowerChuckBound, const int upperChuckBound, const std::vector<std::vector<std::vector<int>>> &grid, const float dt, const int &numGridX, const int &numGridY) {
+struct GridBounds {
+    int left, right, up, down;
+    GridBounds(const int x, const int y, const int maxX, const int maxY) {
+        this->left = std::max(0, x-1);
+        this->right = std::min(x+1, maxX);
+        this->up = std::max(0, y-1);
+        this->down = std::min(y+1, maxY);
+    }
+};
+
+void singleThreadParticleComputation(std::atomic<bool> check[], std::vector<Particle> &particles,
+                                     const int lowerChuckBound, const int upperChuckBound,
+                                     const std::vector<std::vector<std::vector<int>>> &grid, const float dt,
+                                     const int &numGridX, const int &numGridY) {
     for (int x = lowerChuckBound; x < upperChuckBound && x < numGridX; x++) {
-        for(int y = 0; y < grid[x].size(); y++) {
-            for(int n = 0; n < grid[x][y].size(); n++) {
-                int a = grid[x][y][n];
+        for (int y = 0; y < grid[x].size(); y++) {
+            for (const auto a: grid[x][y]) {
                 particles[a].update(dt);
                 particles[a].checkWallCollision();
-                const int leftLimit = (x-1 < 0) ? 0 : x-1;
-                const int rightLimit = (x+1 > numGridX-1) ? numGridX-1 : x+1;
-                const int upLimit = (y-1 < 0) ? 0 : y-1;
-                const int bottomLimit = (y+1 > numGridY-1) ? numGridY-1 : y+1;
+                const GridBounds currentGrid(x, y, numGridX - 1, numGridY - 1);
 
-                for(int x2=leftLimit; x2<=rightLimit; x2++) {
-                    for(int y2=upLimit; y2<=bottomLimit; y2++) {
-                        for(int n2 = 0; n2 < grid[x2][y2].size(); n2++) {
-                            int b = grid[x2][y2][n2];
-                            if(particles[a].getPosition() == particles[b].getPosition()){
-                                continue;
-                            }
-                            if(glm::distance(particles[a].getPosition(), particles[b].getPosition()) < constants::PARTICLES_CONTROL_DISTANCE) {
+                for (int x2 = currentGrid.left; x2 <= currentGrid.right; x2++) {
+                    for (int y2 = currentGrid.up; y2 <= currentGrid.down; y2++) {
+                        for (const auto b: grid[x2][y2]) {
+                            if (a == b) continue;
+                            if (glm::distance(particles[a].getPosition(), particles[b].getPosition()) <
+                                constants::PARTICLES_CONTROL_DISTANCE) {
                                 particles[a].resolveCollision(particles[b]);
                                 check[a].store(true, std::memory_order_relaxed);
                                 check[b].store(true, std::memory_order_relaxed);
@@ -55,16 +68,35 @@ void singleThreadParticleComputation(std::atomic<bool> check[], std::vector<Part
     }
 }
 
+inline void renderParticles(SDL_Renderer* renderer, const std::vector<SDL_Point> &ptsCollided, const std::vector<SDL_Point> &ptsNotCollided){
+    SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
+    SDL_RenderClear(renderer);
+
+    //Particelle con collisioni avvenute
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
+    if (!ptsCollided.empty()) {
+        SDL_RenderDrawPoints(renderer, ptsCollided.data(), static_cast<int>(ptsCollided.size()));
+        //*.data() restituisce un puntatore al primo elemento del vettore, così si può accedere ad un vector come se fosse un array
+    }
+
+    //Particelle senza collisioni avvenute
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    if (!ptsNotCollided.empty()) {
+        SDL_RenderDrawPoints(renderer, ptsNotCollided.data(), static_cast<int>(ptsNotCollided.size()));
+    }
+    SDL_RenderPresent(renderer);
+}
+
 int main(const int argc, char *argv[]) {
     unsigned int N;
     if (argc < 2) {
         N = constants::DEFAULT_NUM_PARTICLES;
     } else {
-        N = atoi(argv[1]);
+        N = atoi(argv[1]); // NOLINT(*-err34-c) così non segnala il warning
     } //Assign particles value
 
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window = SDL_CreateWindow("Collisione di particelle", SDL_WINDOWPOS_CENTERED,
+    SDL_Window *window = SDL_CreateWindow("Ideal Gas Simulator", SDL_WINDOWPOS_CENTERED,
                                           SDL_WINDOWPOS_CENTERED, constants::SCREEN_WIDTH, constants::SCREEN_HEIGHT,
                                           SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -86,12 +118,7 @@ int main(const int argc, char *argv[]) {
 
     std::vector<Particle> particles;
     particles.reserve(N);
-    for (int i = 0; i < N; i++) {
-        Particle p(
-            i, glm::vec2(random(constants::CONTAINER_INITIAL_WIDTH), random(constants::CONTAINER_INITIAL_HEIGHT)),
-            glm::vec2(randomV(constants::MAX_PARTICLES_VELOCITY), randomV(constants::MAX_PARTICLES_VELOCITY)));
-        particles.push_back(p);
-    } //Generating casual position and velocity for each particle
+    initializeRandomParticles(particles, N);
     std::vector<SDL_Point> ptsCollided(N);
     std::vector<SDL_Point> ptsNotCollided(N);
     std::atomic<bool> check[N];
@@ -184,11 +211,6 @@ int main(const int argc, char *argv[]) {
             });
         } //Assign each tread its works
 
-       //  int startIndex = (numThreads-1)*chunk;
-       //  threads.emplace_back([&check, startIndex, N, &particles, dt]() {
-       //     singleThreadParticleComputation(check, particles, startIndex, N, dt);
-       // }); //effetto diffusione figo, un bug che diventa un feature
-
         for(auto &t: threads) {
             t.join();
         } //Wait all thread
@@ -205,34 +227,13 @@ int main(const int argc, char *argv[]) {
             }
         } //Assign values to ptsCollide and ptsNotCollided
 
-
-        if (skipCount > 0) {
-            skipCount--;
-            continue; //va al prossimo ciclo del while
-        }//Frame skipping
-        {
-            SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
-            SDL_RenderClear(renderer);
-
-            //Particelle con collisioni avvenute
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
-            if (!ptsCollided.empty()) {
-                SDL_RenderDrawPoints(renderer, ptsCollided.data(), static_cast<int>(ptsCollided.size()));
-                //*.data() restituisce un puntaore al primo elemento del vettore, così si può accedere ad un vector come se fosse un array
-            }
-
-            //Particelle senza collisioni avvenute
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            if (!ptsNotCollided.empty()) {
-                SDL_RenderDrawPoints(renderer, ptsNotCollided.data(), static_cast<int>(ptsNotCollided.size()));
-            }
-            SDL_RenderPresent(renderer);
-
+        if (skipCount > 0) skipCount--; //Frame skipping
+        else{
+            renderParticles(renderer, ptsCollided, ptsNotCollided);
             renderCount++;
             skipCount = skipValue; //ripristina skipCount dopo aver renderizzatoil frame
-        } //Render
+        }
     }
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
