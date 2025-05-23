@@ -104,6 +104,7 @@ int main(const int argc, char *argv[]) {
     short int skipCount = 0;
     short int skipValue = 0;
     short int renderCount = 0;
+    float zoom = 1.0f;
 
     while (running) {
         SDL_Event event;
@@ -113,6 +114,15 @@ int main(const int argc, char *argv[]) {
             if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_LEFT) timeMultiplier = 1.f;
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT) timeMultiplier = 5.f;
             if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_RIGHT) timeMultiplier = 1;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE) timeMultiplier = 0;
+            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE) timeMultiplier = 1;
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_PLUS) { // '+'
+                    zoom = std::min(zoom + 0.1f, 10.0f);
+                } else if (event.key.keysym.sym == SDLK_MINUS) { // '-'
+                    zoom = std::max(zoom - 0.1f, 1.f);
+                }
+            }
         }
 
         unsigned int currentTime = SDL_GetTicks();
@@ -138,8 +148,8 @@ int main(const int argc, char *argv[]) {
             // Ottieni le dimensioni attuali della finestra
             SDL_GetWindowSize(window, &windowWidth, &windowHeight);
             // Imposta la scala del rendering per adattarsi alla dimensione della finestra
-            SDL_RenderSetScale(renderer, static_cast<float>(windowWidth) / constants::SCREEN_WIDTH,
-                               static_cast<float>(windowHeight) / constants::SCREEN_HEIGHT);
+            SDL_RenderSetScale(renderer, static_cast<float>(windowWidth) / constants::SCREEN_WIDTH * zoom,
+                               static_cast<float>(windowHeight) / constants::SCREEN_HEIGHT * zoom);
         } //Resize Window
 
         {

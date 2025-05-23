@@ -23,7 +23,7 @@ find_package(glm REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
 add_executable(Particles
-        main.cpp
+        mainV2.cpp
         Constants.h
         Particle.cpp
 )

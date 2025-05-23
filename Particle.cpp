@@ -33,28 +33,27 @@ bool Particle::resolveCollision(Particle &other) {
     // constexpr float minDist = 2*constants::PARTICLE_RADIUS;
     // constexpr float minDistSquared = minDist * minDist; //aggiunte alle costanti
 
-    if (distSquared < constants::MIN_PARTICLE_DIST_SQUARED && distSquared > 0.0f) {
-        const float dist = sqrt(distSquared);  // solo ora uso sqrt
-        const glm::vec2 normal = delta / dist; // normalizzato manualmente
-        const glm::vec2 relativeVel = velocity - other.velocity;
-        const float velAlongNormal = dot(relativeVel, normal);
+    if (distSquared > constants::MIN_PARTICLE_DIST_SQUARED || distSquared < 0.0f) return false;
 
-        if (velAlongNormal > 0.f) return false; // si stanno allontanando
+    const float dist = sqrt(distSquared); // solo ora uso sqrt
+    const glm::vec2 normal = glm::normalize(delta);
+    const glm::vec2 relativeVel = velocity - other.velocity;
+    const float velAlongNormal = dot(relativeVel, normal);
 
-        constexpr float restitution = 1.0f;
-        // const float impulseMag = -(1 + restitution) * velAlongNormal / (2/constants::INVERSE_PARTICLE_MASS); //originale
-        const float impulseMag = -(1 + restitution) * velAlongNormal / (constants::PARTICLE_MASS*2); //ottimizzata 1
+    if (velAlongNormal > 0.f) return false; // si stanno allontanando
 
-        const glm::vec2 impulse = impulseMag * normal;
-        velocity += impulse * constants::INVERSE_PARTICLE_MASS;
-        other.velocity -= impulse * constants::INVERSE_PARTICLE_MASS;
+    constexpr float restitution = 1.0f;
+    // const float impulseMag = -(1 + restitution) * velAlongNormal / (2/constants::INVERSE_PARTICLE_MASS); //originale
+    const float impulseMag = -(1 + restitution) * velAlongNormal / (constants::PARTICLE_MASS * 2); //ottimizzata
 
-        // Risolvi penetrazione (correzione di posizione)
-        const float penetration = constants::MIN_PARTICLE_DIST - dist;
-        const glm::vec2 correction = normal * (penetration / 2.0f);
-        position += correction;
-        other.position -= correction;
-        return true;
-    }
-    return false;
+    const glm::vec2 impulse = impulseMag * normal;
+    velocity += impulse * constants::INVERSE_PARTICLE_MASS;
+    other.velocity -= impulse * constants::INVERSE_PARTICLE_MASS;
+
+    // Risolvi penetrazione (correzione di posizione)
+    const float penetration = constants::MIN_PARTICLE_DIST - dist;
+    const glm::vec2 correction = normal * (penetration / 2.0f);
+    position += correction;
+    other.position -= correction;
+    return true;
 }

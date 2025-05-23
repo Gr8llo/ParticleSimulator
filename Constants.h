@@ -9,14 +9,15 @@
 namespace constants {
     constexpr int SCREEN_WIDTH = 2560;
     constexpr int SCREEN_HEIGHT = 1440;
-    constexpr unsigned int CONTAINER_INITIAL_WIDTH = 800;
-    constexpr unsigned int CONTAINER_INITIAL_HEIGHT = 600;
+    constexpr unsigned int CONTAINER_INITIAL_WIDTH = 1920;
+    constexpr unsigned int CONTAINER_INITIAL_HEIGHT = 1080;
     constexpr int TARGET_FPS = 60;
     constexpr int CHUNK_OVERLAP = 0;
+    constexpr int CELL_SIZE = 8;
     //Particles Constants
     constexpr unsigned int DEFAULT_NUM_PARTICLES = 1e4;
-    constexpr float MAX_PARTICLES_VELOCITY = 150.0f;
-    constexpr float PARTICLE_MASS = 200.0f;
+    constexpr float MAX_PARTICLES_VELOCITY = 500.0f;
+    constexpr float PARTICLE_MASS = 10.0f;
     constexpr float INVERSE_PARTICLE_MASS = 1.0f / PARTICLE_MASS;
     constexpr float PARTICLE_RADIUS = 4.0f;
     constexpr float MIN_PARTICLE_DIST = 2*PARTICLE_RADIUS;
