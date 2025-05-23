@@ -22,10 +22,12 @@ include_directories(${SDL2_INCLUDE_DIRS})
 find_package(glm REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
+file(GLOB SOURCES "current/src/*.cpp")
+
 add_executable(Particles
-        mainV3.cpp
-        Constants.h
-        ParticleV2.cpp
+        current/mainV3.cpp
+        current/include/Constants.h
+        ${SOURCES}
 )
 
 # Link SDL2
