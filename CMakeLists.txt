@@ -3,35 +3,42 @@ project(Particles)
 
 set(CMAKE_CXX_STANDARD 20)
 
-#Set CMAKE_BUILD_TYPE to release
+# === Build type ===
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
 endif()
 
-    # Usa meno flag, per il momento la versione più pulita
+# === Custom flags for Release ===
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -DNDEBUG")
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto")
 endif()
 
-# Find SDL2
+# === SDL2 ===
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
-# Include GLM
+# === GLM ===
 find_package(glm REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
+# === Source files ===
 file(GLOB SOURCES "current/src/*.cpp")
 
+# === Executable ===
 add_executable(Particles
         current/mainV3.cpp
         current/include/Constants.h
         ${SOURCES}
 )
 
-# Link SDL2
+# === Link libraries ===
 target_link_libraries(Particles ${SDL2_LIBRARIES})
+
+# === Show info ===
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER}")
+
 
 # Add Flags to Release Mode
 ##if(CMAKE_BUILD_TYPE STREQUAL "Release")

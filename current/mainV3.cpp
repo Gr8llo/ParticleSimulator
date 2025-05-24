@@ -2,35 +2,24 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include <algorithm>
 
 #include "include/Constants.h"
 #include "include/Particle.h"
 #include "include/RenderUtils.h"
 #include "include/ParticleUtils.h"
+#include "include/InputHandler.h"
 
 using namespace std;
 
-struct GridBounds {
-    int left, right, up, down;
-    GridBounds(const int x, const int y, const int maxX, const int maxY) {
-        this->left = max(0, x-1);
-        this->right = min(x+1, maxX);
-        this->up = max(0, y-1);
-        this->down = min(y+1, maxY);
-    }
-};
-
 void singleThreadParticleComputation(atomic<bool> check[], vector<Particle> &particles,
                                      const int lowerChuckBound, const int upperChuckBound,
-                                     const vector<vector<vector<int>>> &grid, const float dt,
-                                     const int &numGridX, const int &numGridY) {
-    for (int x = lowerChuckBound; x < upperChuckBound && x < numGridX; x++) {
+                                     const vector<vector<vector<int>>> &grid, const float dt) {
+    for (int x = lowerChuckBound; x < upperChuckBound && x < screen::GRID_X; x++) {
         for (int y = 0; y < grid[x].size(); y++) {
             for (const auto a: grid[x][y]) {
                 particles[a].update(dt);
                 particles[a].checkWallCollision();
-                const GridBounds currentGrid(x, y, numGridX - 1, numGridY - 1);
+                const GridBounds currentGrid(x, y, screen::GRID_X - 1, screen::GRID_Y - 1);
 
                 for (int x2 = currentGrid.left; x2 <= currentGrid.right; x2++) {
                     for (int y2 = currentGrid.up; y2 <= currentGrid.down; y2++) {
@@ -62,13 +51,11 @@ int main(const int argc, char *argv[]) {
     SDL_Renderer *renderer;
     initializeSLD2(window, renderer);
 
-    constexpr unsigned int numGridX = (screen::SCREEN_WIDTH / screen::CELL_SIZE);
-    constexpr unsigned int numGridY = (screen::SCREEN_HEIGHT / screen::CELL_SIZE);
-    vector<vector<vector<int>>> grid(numGridX, vector<vector<int>>(numGridY));
+    vector<vector<vector<int>>> grid(screen::GRID_X, vector<vector<int>>(screen::GRID_Y));
 
     // const short unsigned int numThreads = thread::hardware_concurrency();
     const short unsigned int numThreads = thread::hardware_concurrency();
-    const short unsigned int chunk = numGridX/numThreads;
+    const short unsigned int chunk = screen::GRID_X/numThreads;
     vector<thread> threads;
     threads.reserve(numThreads);
 
@@ -77,25 +64,14 @@ int main(const int argc, char *argv[]) {
     initializeRandomParticles(particles, N);
     vector<SDL_Point> ptsCollided(N);
     vector<SDL_Point> ptsNotCollided(N);
+    // ReSharper disable once CppTooWideScope
     atomic<bool> check[N];
 
     AppState appState;
 
     while (appState.running) {
         SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) appState.running = false;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_LEFT) appState.timeMultiplier = 0.2f;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_LEFT) appState.timeMultiplier = 1.f;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RIGHT) appState.timeMultiplier = 5.f;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_RIGHT) appState.timeMultiplier = 1;
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE) appState.timeMultiplier = 0;
-            if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_SPACE) appState.timeMultiplier = 1;
-            if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == SDLK_PLUS) appState.zoom = min(appState.zoom + 0.1f, 10.0f);
-                else if (event.key.keysym.sym == SDLK_MINUS) appState.zoom = max(appState.zoom - 0.1f, 1.f);
-            }
-        }
+        while (SDL_PollEvent(&event)) handleInput(appState, event);
 
         const unsigned int currentTime = SDL_GetTicks();
         float dt = static_cast<float>(currentTime - appState.lastTime) / 1000.0f;
@@ -109,13 +85,13 @@ int main(const int argc, char *argv[]) {
         ptsCollided.clear();
         ptsNotCollided.clear();
         for (int i = 0; i < N; i++) check[i].store(false, memory_order_relaxed);
-        gridInitialization(grid, particles, numGridX, numGridY, N);
+        gridInitialization(grid, particles, N);
 
         for(int t=0; t < numThreads; t++) {
             int startIndex = (t==0) ? 0 : t*chunk;
             int endIndex = (t==numThreads-1) ? static_cast<int>(N) : (t+1)*chunk;
-            threads.emplace_back([&check, startIndex, endIndex, &particles, &grid, dt, numGridX, numGridY]() {
-                singleThreadParticleComputation(check, particles, startIndex, endIndex, grid, dt, numGridX, numGridY);
+            threads.emplace_back([&check, startIndex, endIndex, &particles, &grid, dt]() {
+                singleThreadParticleComputation(check, particles, startIndex, endIndex, grid, dt);
             });
         } //Assign each tread its works
         for(auto &t: threads) {

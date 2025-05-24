@@ -8,6 +8,6 @@ void initializeRandomParticles(std::vector<Particle> &particles, unsigned int N)
 
 using namespace std;
 
-void gridInitialization(vector<vector<vector<int>>> &grid, const std::vector<Particle> &particles, int numGridX, int numGridY, unsigned int N);
+void gridInitialization(vector<vector<vector<int>>> &grid, const std::vector<Particle> &particles, unsigned int N);
 
 #endif //PARTICLEUTILS_H

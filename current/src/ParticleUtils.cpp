@@ -3,7 +3,7 @@
 #include <random>
 #include "../include/Constants.h"
 
-float random(const float min, const float max) {
+inline float random(const float min, const float max) {
     static std::random_device r;
     static std::default_random_engine engine(r());
     std::uniform_real_distribution<float> dist(min, max);
@@ -24,9 +24,9 @@ void initializeRandomParticles(std::vector<Particle> &particles, const unsigned 
     } //Generating casual position and velocity for each particle
 }
 
-void gridInitialization(vector<vector<vector<int>>> &grid, const vector<Particle> &particles, const int numGridX, const int numGridY, const unsigned int N) {
-    for (int x = 0; x < numGridX; ++x) {
-        for (int y = 0; y < numGridY; ++y) {
+void gridInitialization(vector<vector<vector<int>>> &grid, const vector<Particle> &particles, const unsigned int N) {
+    for (int x = 0; x < screen::GRID_X; ++x) {
+        for (int y = 0; y < screen::GRID_Y; ++y) {
             grid[x][y].clear();
         }
     }
@@ -34,7 +34,7 @@ void gridInitialization(vector<vector<vector<int>>> &grid, const vector<Particle
         const int xIndex = static_cast<int>(particles[i].getPosition().x) / screen::CELL_SIZE;
         const int yIndex = static_cast<int>(particles[i].getPosition().y) / screen::CELL_SIZE;
 
-        if (xIndex >= 0 && xIndex < numGridX && yIndex >= 0 && yIndex < numGridY) {
+        if (xIndex >= 0 && xIndex < screen::GRID_X && yIndex >= 0 && yIndex < screen::GRID_Y) {
             grid[xIndex][yIndex].push_back(i);
         }
     }

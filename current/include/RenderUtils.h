@@ -2,6 +2,7 @@
 #define RENDERUTILS_H
 
 #include <SDL2/SDL.h>
+#include <iostream>
 #include <vector>
 
 void initializeSLD2(SDL_Window* &window, SDL_Renderer* &renderer);
@@ -22,5 +23,15 @@ struct AppState {
     short int skipCount = 0;
     short int skipValue = 0;
     float zoom = 1.0f;
+};
+
+struct GridBounds {
+    int left, right, up, down;
+    GridBounds(const int x, const int y, const int maxX, const int maxY) {
+        this->left = std::max(0, x-1);
+        this->right = std::min(x+1,maxX);
+        this->up = std::max(0, y-1);
+        this->down = std::min(y+1, maxY);
+    }
 };
 #endif //RENDERUTILS_H

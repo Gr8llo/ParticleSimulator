@@ -9,10 +9,12 @@
 namespace screen {
     constexpr int SCREEN_WIDTH = 1920;
     constexpr int SCREEN_HEIGHT = 1080;
-    constexpr unsigned int CONTAINER_INITIAL_WIDTH = 800;
-    constexpr unsigned int CONTAINER_INITIAL_HEIGHT = 450;
+    constexpr unsigned int CONTAINER_INITIAL_WIDTH = 1920; //800
+    constexpr unsigned int CONTAINER_INITIAL_HEIGHT = 1080; //450
     constexpr int TARGET_FPS = 60;
-    constexpr int CELL_SIZE = 4;
+    constexpr int CELL_SIZE = 3;
+    constexpr unsigned int GRID_X = SCREEN_WIDTH / CELL_SIZE;
+    constexpr unsigned int GRID_Y = SCREEN_HEIGHT / CELL_SIZE;
 }
 
 namespace particle {
